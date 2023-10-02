@@ -1,139 +1,65 @@
-<!-- <!DOCTYPE html> -->
 <html lang="pt-br" ng-app="championship">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Championship</title>
-    <link rel="stylesheet" href="lib/bootstrap/bootstrap.css">
-    <style>
-        .jumbotron {
-            width: 700 px;
-            text-align: center;
-            margin-top: 20px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .table {
-            margin-top: 20px;
-        }
-        .selected {
-            background-color: aquamarine;
-        }
-        .bold {
-            font-weight: bold;
-        }
-        .alert {
-            width: auto;
-            margin-left: auto;
-            margin-right: auto;
-            opacity: 0.2;
-            background-color: red;
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Championship</title>
+        <link rel="stylesheet" href="lib/bootstrap/bootstrap.css">
+        <link rel="stylesheet" href="css/app.css">
+        <link rel="stylesheet" href="css/ui.css">
+        <script src="lib/angular/angular.js"></script>
+        <script src="lib/angular/angular-locale_pt-br.js"></script>
+        <script src="lib/angular/angular-messages.js"></script>
+        <script src="js/app.js"></script>
+        <script src="js/controllers/championshipController.js"></script>
+        <script src="js/services/championshipAPIService.js"></script>
+        <script src="js/value/configValue.js"></script>
+        <script src="js/filters/nameFilter.js"></script>
+        <script src="js/directives/uiAlertDirective.js"></script>
+    </head>
+    <body ng-controller="championshipController">
+        <div class="jumbotron">
+            <h3>{{app}}</h3>
+            <input class="form-control" type="text" ng-model="searchAttribute" placeholder="O que  você está buscando?">
+            <table ng-show="championships.length > 0" class="table">
+                <tr>
+                    <th><a href="" ng-click="orderBy1('championshipId')">Id</a></th>
+                    <th><a href="" ng-click="orderBy1('championshipName')">Nome</a></th>
+                    <th><a href="" ng-click="orderBy1('championshipDate')">Ano</a></th>
+                    <th>Iniciado</th>
+                    <th>Finalizado</th>
+                </tr>
+                <tr ng-class="{'selected bold': championship.selected}" 
+                    ng-repeat="championship in championships | filter: searchAttribute | orderBy: orderAttribute : orderDirection">
+                    <td><input type="checkbox" ng-model="championship.selected"></td>
+                    <td>{{championship.id}}</td>
+                    <td>{{championship.championshipName | name}}</td>
+                    <td>{{championship.championshipDate}}</td>
+                    <td>{{championship.championshipStarted}}</td>
+                    <td>{{championship.championshipFinished}}</td>
+                </tr>
+            </table>
+
+            <hr/>
+                <form name="championshipForm">
+                    <td><input class="form" type="text" ng-model="championship.championshipName" name="championshipName" placeholder="Nome" ng-required="true" ng-minlength="4"></td>
+                    <td><input class="form" type="number" ng-model="championship.championshipDate" name="championshipDate" placeholder="Ano" ng-required="true" ng-pattern="/^\d{4}$/"></td>
+                </form>
+                <div ng-show="championshipForm.championshipName.$dirty" ng-messages="championshipForm.championshipName.$error">
+                    <div ng-message="required" class="alert">Preencha o nome do campeonato!</div>
+                    <div ng-message="minlength" class="alert">O nome do campeonato deve conter no minimo 4 caracteres!</div>
+                </div>
+                <div ng-show="championshipForm.championshipDate.$dirty" ng-messages="championshipForm.championshipDate.$error">
+                    <div ng-message="required" class="alert">Preencha o ano do campeonato!</div>
+                    <div ng-message="pattern" class="alert">O ano deve possuir 4 caracteres!</div>
+                </div>
+            <hr/>
+
+            <button class="btn btn-primary" ng-click="addChampionship(championship)" ng-disabled="championshipForm.$invalid">Adicionar Campeonato</button>
+            <button class="btn btn-danger" ng-click="deleteChampionship(championships) && timerNotification()" ng-disabled="!isChampionshipSelected(championships)">Deletar Campeonato</button>
             
-        }
+            
+            <div ui-alert></div>
 
-    </style>
-    <script src="lib/angular/angular.js"></script>
-    <script src="lib/angular/angular-locale_pt-br.js"></script>
-    <script src="lib/angular/angular-messages.js"></script>
-    <script>
-        angular.module("championship",["ngMessages"]);
-        angular.module("championship").controller("championshipController", function ($scope, $http) {
-            $scope.app = "Campeonatos";
-            $scope.championships = [];
-            $scope.deleteItens = [];
-
-            var loadChampionships = function () {
-                $http.get("http://localhost:8080/championships/get-all").then(function (response) {    
-                    $scope.championships = response.data.slice();
-                })
-            }
-
-            $scope.addChampionship = function (championship){
-                $http.post("http://localhost:8080/championships/create", championship).then( function successCallback(response) {
-                    delete $scope.championship;
-                    $scope.championshipForm.$setPristine();
-                    loadChampionships();
-                }).catch(function errorCallback(response) {
-                    $scope.message = "Algo deu errado: " + response.data.message
-                });
-            };
-
-            $scope.deleteChampionship = function (championships) {
-                $scope.deleteItens.forEach(id => {
-                    $http.delete("http://localhost:8080/championships/delete/" + id).then( function successCallback(data) {
-                        $scope.championships = championships.filter(function (championship) {
-                            if (!championship.selected == true) 
-                            return championship
-                        });
-                    }).catch(function errorCallback(response) {
-                            $scope.message = "Algo deu errado: " + response.data.message    
-                        })
-                })
-                loadChampionships();
-            };
-
-            $scope.isChampionshipSelected = function (championships) {
-                $scope.deleteItens = championships.filter(championship => (championship.selected == true))
-                var teste = Object.values($scope.deleteItens)
-                var blau = [];
-                teste.forEach(data => {
-                    blau.push(data.id)
-                });
-                $scope.deleteItens = blau
-            };
-
-            $scope.orderBy1 = function (d) {
-                $scope.orderAttribute = d
-                $scope.orderDirection = !$scope.orderDirection
-            };
-
-            loadChampionships();
-        });
-    </script>
-</head>
-<body ng-controller="championshipController">
-    <div class="jumbotron">
-        <h3>{{app}}</h3>
-        <!-- {{championships}} -->
-        <input class="form-control" type="text" ng-model="searchAttribute" placeholder="O que  você está buscando?">
-        <table ng-show="championships.length > 0" class="table">
-            <tr>
-                <th></th>
-                <th><a href="" ng-click="orderBy1('championshipId')">Id</a></th>
-                <th><a href="" ng-click="orderBy1('championshipName')">Nome</a></th>
-                <th><a href="" ng-click="orderBy1('championshipDate')">Ano</a></th>
-                <th>Iniciado</th>
-                <th>Finalizado</th>
-            </tr>
-            <tr ng-class="{'selected bold': championship.selected}" 
-                ng-repeat="championship in championships | filter: searchAttribute | orderBy: orderAttribute : orderDirection">
-                <td><input type="checkbox" ng-model="championship.selected"></td>
-                <td>{{championship.id}}</td>
-                <td>{{championship.championshipName}}</td>
-                <td>{{championship.championshipDate}}</td>
-                <td>{{championship.championshipStarted}}</td>
-                <td>{{championship.championshipFinished}}</td>
-            </tr>
-           
-        </table>
-        <hr/>
-        <form name="championshipForm">
-            <td><input class="form" type="text" ng-model="championship.championshipName" name="championshipName" placeholder="Nome" ng-required="true" ng-minlength="4"></td>
-            <td><input class="form" type="number" ng-model="championship.championshipDate" name="championshipDate" placeholder="Ano" ng-required="true" ng-pattern="/^\d{4}$/"></td>
-        </form>
-        <div ng-messages="championshipForm.championshipName.$error" class="alert">
-            <div ng-message="required && championshipForm.championshipName.$dirty">Preencha o nome do campeonato!</div>
-            <div ng-message="minlength">O nome do campeonato deve conter no minimo 4 caracteres!</div>
         </div>
-        <div ng-messages="championshipForm.championshipDate.$error && championshipForm.championshipDate.$dirty" class="alert">
-            <div ng-message="required">Preencha o ano do campeonato!</div>
-            <div ng-message="pattern">O ano deve possuir 4 caracteres!</div>
-        </div>
-        <hr/>
-        <button class="btn btn-primary" ng-click="addChampionship(championship)" ng-disabled="championshipForm.$invalid">Adicionar Campeonato</button>
-        <button class="btn btn-danger" ng-click="deleteChampionship(championships)" ng-disabled="isChampionshipSelected(championships)">Deletar Campeonato</button>
-        <h5 class="alert">{{message}}</h5>
-    </div>
-    
-</body>
+    </body>
 </html>

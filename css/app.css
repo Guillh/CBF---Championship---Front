@@ -1,0 +1,22 @@
+.jumbotron {
+    width: 700 px;
+    text-align: center;
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.table {
+    margin-top: 20px;
+}
+.selected {
+    background-color: aquamarine;
+}
+.bold {
+    font-weight: bold;
+}
+.alert {
+    width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #f2dede;
+}
